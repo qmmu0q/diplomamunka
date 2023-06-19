@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Turisztikai és etnikai webtérkép</title>
+		<link rel='icon' type='image/x-icon' href='media/logo.png'>
+		<meta name='description' content='A webtérkép a Losonci, Poltári és Rimaszombati járások területét mutatja be turisztikai és nemzetiségi szempontok alapján.' /> 
+		<meta charset='utf-8'>
+		<meta name='viewport' content='initial-scale=1,user-scalable=no' />
+
+		<!--LEAFLET: https://leafletjs.com-->
+		<link rel='stylesheet' href='leaflet/leaflet.css' />
+		<script src='leaflet/leaflet.js'></script>
+
+		<!--MARKERCLUSTER PLUGIN: https://github.com/Leaflet/Leaflet.markercluster-->
+		<link rel='stylesheet' href='markercluster/MarkerCluster.css' />
+		<link rel='stylesheet' href='markercluster/MarkerCluster.Default.css' />
+		<script src='markercluster/leaflet.markercluster.js'></script>
+		<script src='markercluster/leaflet.markercluster.layersupport.js'></script>
+
+		<!--SIDEBAR PLUGIN: https://github.com/turbo87/leaflet-sidebar-->
+		<link rel='stylesheet' href='sidebar/L.Control.Sidebar.css' />
+		<script src='sidebar/L.Control.Sidebar.js'></script>
+
+		<style>
+			html, body {
+                height: 100%;
+                margin: 0;
+            }
+            #map_div {
+                width: 100%;
+                height: 100%;
+            }
+
+			/*RÉTEGKEZELŐ*/
+			.leaflet-retina .leaflet-control-layers-toggle {
+				background-image: url(media/logo.png);
+				background-size: contain;
+				z-index: 1000;
+			}
+			.leaflet-control-layers-toggle {
+				background-image: url(media/logo.png);
+				background-size: contain;
+			}
+			.leaflet-control-layers {
+				color: white;
+				font-size: 13px;
+				font-family: Arial;
+				font-weight: bold;
+				background-color: #008080d7;
+			}
+			span:hover{
+				color: #F4D096;
+				cursor: pointer;
+			}
+
+			/*ZOOM GOMB*/
+			.leaflet-control-zoom a {
+				color: white;
+				background-color: #008080d7;
+			}
+
+			/*LÉPTÉKRÚD*/
+			.leaflet-control-scale-line {
+				font-family: Arial;
+				font-style: italic;
+				color: white;
+				background-color: #008080d7;
+				cursor: default;
+			}
+
+			/*TELEPÜLÉSRÉTEGEK HOVER*/
+			svg path.telepules:hover {
+				stroke: #008080;
+				stroke-width: 3;
+				fill-opacity: 0;
+				opacity: 1;
+			}
+			svg path.pop:hover {
+				stroke: #A0A0A0;
+				stroke-width: 4;
+				fill-opacity: 0.9;
+				opacity: 1;
+			}
+
+			/*AGGREGÁLT JÁRÁSOK HOVER*/
+			svg path.jaras:hover {
+				stroke: #008080;
+				stroke-width: 4;
+				fill-opacity: 0.9;
+				opacity: 1;
+			}
+
+			/*TURISTAUTAK HOVER*/
+			svg path.turistautak:hover {
+				stroke-width: 10;
+			}
+
+			/*TOOLTIP*/
+			.tooltip {
+				color: white;
+				font-size: 15px;
+				font-family: Arial;
+				background-color: #008080;
+				border: none;
+				border-radius: 10px;
+			}
+			.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+    			border: none;
+			}
+
+			/*POPUP*/
+			.leaflet-popup-content {
+				color: #008080;
+				font-size: 13px;
+				font-family: Arial;				
+			}
+			hr {
+				color: #008080;
+			}
+			.leaflet-popup-content-wrapper {
+				border: 4px solid #008080;
+			}
+			.leaflet-container a.leaflet-popup-close-button {
+				color: rgba(202, 31, 31, 0.623);
+			}
+			.leaflet-container a.leaflet-popup-close-button:hover {
+				color: rgb(255, 0, 0);
+			}
+			.leaflet-popup-tip {
+				background: #008080;
+			}
+			a.popup_link {
+				color: #008080;
+			}
+			a.popup_link:hover {
+				font-weight: bold;
+			}
+            img[title='Forrás: -'] {
+                display:none;
+            }
+			img[src='media/kep/geopark_pontok/4.jpg'], img[src='media/kep/geopark_pontok/7.jpg'], img[src='media/kep/geopark_pontok/20.jpg'] {
+                display:none;
+            }
+			#adathiany_popup:hover {
+				font-weight: bold;
+			}
+
+			/*CÍM DIV*/
+			#cim_div {
+				position: absolute;
+					top: 10px;
+					left: 0px;
+				width: 360px;
+				height: 40px;
+				padding: 10px;
+				background: #008080e0;
+				border-radius: 0px 30px 30px 0px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index: 1000;
+			}
+			a[title='Információs oldal'] {
+				color: white;
+				font-size: 16px;
+				font-family: Arial, 'Times New Roman';
+				font-weight: bold;
+				text-decoration: none;
+				text-align: center;
+				word-spacing: 2px;
+				letter-spacing: 1.5px;
+			}
+			a[title='Információs oldal']:hover {
+				font-size: 18px;
+				text-decoration: underline;
+			}
+
+			/*ZOOM REFRESH GOMB*/
+			#zoom_refresh {
+				position: absolute;
+					top: 80px;
+					left: 70px;
+				border-radius: 50%;
+				background-color: #008080d7;
+				background-image: url(media/home_leave.png);
+				background-repeat: no-repeat;
+				background-position: center;
+				width: 40px;
+				height: 40px;
+				z-index: 1000;
+				cursor: pointer;
+				transition: width 0.4s, height 0.4s;
+			}
+			#zoom_refresh:hover {
+				background-color: white;
+				background-image: url(media/home_over.png);
+				cursor: pointer;
+				width: 45px;
+				height: 45px;
+			}
+
+			/*INFO GOMB*/
+			#info_gomb {
+				position: absolute;
+					top: 80px;
+					left: 160px;
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				background-color: #008080d7;
+				color: white;
+				font-family: Arial, 'Times New Roman';
+				font-size: 30px;
+				font-weight: bold;
+				text-align: center;
+				line-height: 40px;
+				z-index: 1000;
+				cursor: pointer;
+				transition: width 0.4s, height 0.4s;
+			}
+			#info_gomb:hover {
+				color: #008080;
+				background-color: white;
+				cursor: pointer;
+				width: 45px;
+				height: 45px;
+				line-height: 45px;
+			}
+
+			/*NYELVVALTO GOMB*/
+			#nyelvvalto {
+				position: absolute;
+					top: 80px;
+					left: 250px;
+				border-radius: 50%;
+				background-image: url(media/flag/slovakia.png);
+				background-repeat: no-repeat;
+				background-size: contain;
+				background-position: center;
+				width: 40px;
+				height: 40px;
+				z-index: 1000;
+				cursor: pointer;
+				transition: width 0.4s, height 0.4s;				
+			}
+			#nyelvvalto:hover {
+				cursor: pointer;
+				width: 45px;
+				height: 45px;				
+			}
+
+			/*SIDEBAR*/
+			#sidebar {
+				color: white;
+				background-color: #008080e5;
+			}
+			.leaflet-sidebar .close {
+				background: white;
+				color: #008080;
+				border-radius: 10px;
+				text-align: center;
+				font-size: 30px;
+			}
+			.leaflet-sidebar .close:hover {
+				color: red;
+			}
+			#osm_horgony a {
+				color: white;
+				text-decoration: none;
+			}
+			#osm_horgony a:hover {
+				color: #F4D096;
+				text-decoration: underline;
+			}
+			#horgonyok a {
+				color: white;
+			}
+			#horgonyok a:hover {
+				font-weight: bold;
+				color: #F4D096;
+			}
+
+			/*JELMAGYARÁZAT*/
+			.legend {
+    			line-height: 24px;
+				color: white;
+				background-color: #008080d7;
+				border-radius: 10px;
+				padding-left: 8px;
+				padding-bottom: 8px;
+				cursor: default;
+				font-family: Arial, 'Times New Roman';
+				font-size: 16px;
+				font-weight: bold;
+				position: absolute;
+					top: 200px;
+				width: 190px;
+			}
+			.legend i {
+				position: relative;
+				width: 54px;
+				height: 18px;
+				float: left;
+				margin-top: 2px;
+				margin-left: 15px;
+				margin-right: 15px;
+				border: solid 2px white;
+				border-radius: 3px;
+			}
+		</style>
+	</head>
+	<body>
+		<!--TÉRKÉPVÁSZON-->
+		<div id='map_div'>
+		</div>
+
+		<!--CÍM-->
+		<div id='cim_div'>
+			<a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu' title='Információs oldal'>
+				Turisztikai és etnikai webtérkép (Losonc, Poltár és Rimaszombat)
+			</a>
+		</div>
+
+		<!--ALAPÉRTELMEZETT NAGYÍTÁS-->
+		<div id='zoom_refresh' onclick='zoomrefresh()' title='Alapértelmezett nagyítás'>
+		</div>
+
+		<!--INFO-->
+		<div id='info_gomb' onclick='infogomb()' title='Információs panel'>
+			i
+		</div>
+
+		<!--NYELVVÁLTÓ-->
+		<div id='nyelvvalto' title='Váltás szlovák nyelvre' onclick='location.href="https://jakubtamas.web.elte.hu/webterkep_desktop_sk.html"'>
+		</div>
+		
+		<!--SIDEBAR-->
+		<div id='sidebar'>
+		</div>
+
+		<script>
+			//ÁTIRÁNYÍTÁS MOBILVERZIÓRA
+			if (screen.width <= 700) {
+				document.location = 'https://jakubtamas.web.elte.hu/webterkep_mobile_hu.html'
+			};
+
+			//TÉRKÉPVÁSZON
+			var	bounds = L.latLngBounds(
+				[45.860099, 15.126125],
+				[51.351895, 24.358434]
+			);
+			var map=L.map('map_div', {
+				maxBounds: bounds, 
+				minZoom: 8
+			});
+
+			//NAGYÍTÁSVEZÉRLŐ ÁTHELYEZÉSE
+			map.zoomControl.setPosition('topright');
+
+			//LÉPTÉKRÚD LÉTREHOZÁSA
+			var leptekrud=L.control.scale({imperial: false}).addTo(map);
+
+			//ALAPTÉRKÉPEK BETÖLTÉSE
+			var osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(map);
+			var otm=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			});
+			var satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	    		attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+			});
+
+			//MARKERCLUSTER PLUGIN
+			var markercluster = L.markerClusterGroup().addTo(map),
+				supportGroup = L.markerClusterGroup.layerSupport().addTo(map),
+				myLayerGroup = L.layerGroup();
+			supportGroup.checkIn(myLayerGroup);
+
+			//SIDEBAR PLUGIN
+			var sidebar = L.control.sidebar('sidebar', {
+				position: 'left'
+			});
+			map.addControl(sidebar);
+			sidebar.setContent(
+				"<font size= 5><b>Turisztikai és etnikai webtérkép</font></br><big><i>(Losonc, Poltár és Rimaszombat járások példáján)</i></big></b></br></br>"+
+				"<div id='osm_horgony' align='justify' style='font-size: 14px'>"+
+					"A térkép települési szinten mutat be három Dél-szlovákiai járást. Összesen <i>186</i> település található a vizsgált területen, ami korábban közigazgatásilag <i>Gömör és Kishont</i>, valamint <i>Nógrád vármegyékhez</i> tartozott.</br></br>"+
+					"Megtekinthetők a térség turisztikailag releváns objektumai, valamint az általam átszerkesztett turistaúthálózat. Az adatforrás mindkét esetben az <a href='https://www.openstreetmap.org/about' title='Információ az OpenStreetMap-ről'><i>OpenStreetMap</i></a> ingyenes és szabadon szerkeszthető térképi adatbázisa volt.</br></br>"+
+					"Továbbá elérhetőek települési szintű bontásban a nemzetiségi arányok — a megtekintésükhöz aktiválni kell a <i>rétegkezelőben</i> (jobb felső sarok) valamelyik népszámlálási réteget, majd az adott településre kattintva láthatóvá válik a nemzetiségek eloszlását mutató oszlopdiagram. A nemzetiségi adatok forrásául az 1910-es, és a 2011-es népszámlálások szolgáltak.</br></br>"+
+				"</div></br>"+
+				"<big><b>További információk:</b></big>"+
+				"<div id='horgonyok'><ul style='line-height: 180%'>"+
+					"<li><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/' title=''><font size = 2.9><i>Általános információk</i></font></a></li>"+
+					"<li><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/cimerek' title=''><font size = 2.9><i>Címerek gyűjteménye</i></font></a></li>"+
+					"<li><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/muemlekek' title=''><font size = 2.9><i>Legfontosabb műemlékek bemutatása</i></font></a></li>"+
+					"<li><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/foldtani' title=''><font size = 2.9><i>Legfontosabb földtani objektumok bemutatása</i></font></a></li>"+
+					"<li><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/nepszamlalas' title=''><font size = 2.9><i>Népszámlálási adatok bemutatása</i></font></a></div></li>"+
+				"</ul></div></br>"+
+				"<font size = 2><i>A weboldal készítője: <b>Jakub Tamás</b></br>"+
+				"<font size = 2><i>Utolsó frissítés időpontja: 2022.05.16"
+			);
+			function infogomb() {sidebar.show()};
+			
+
+			//RÉTEGEK LÉTREHOZÁSA
+			//SÖTÉTÍTŐ - legkisebb nagyításnál
+			var sotetitoReteg;
+			fetch('geojson/sotetito.geojson').then(r=>r.json()).then(function(sotetito) {
+				sotetitoReteg = L.geoJson(sotetito, {
+					color: 'black',
+					fillOpacity: 0.15,
+					weight: Number(0)
+				});
+			});
+
+			//ÖSSZEVONT JÁRÁSOK - legkisebb nagyításnál
+			var zoomjarasReteg;
+			fetch('geojson/zoomjaras.geojson').then(r=>r.json()).then(function(zoomjaras) {
+				zoomjarasReteg = L.geoJson(zoomjaras, {
+					color: '#454545',
+					fillColor: 'white',
+					weight: Number(1.5),
+					fillOpacity: 0.5,
+					opacity: 0.8,
+					className: 'jaras'
+				}).addTo(map).bindTooltip(
+					l=>'<b>'+l.feature.properties.name_hu+'</b></br><i>('+l.feature.properties.Name+')</i>', {className: 'tooltip'}
+				).bindPopup(popup_zoomjaras);
+			});
+
+			//TELEPÜLÉSRÉTEG
+			var selected;
+			var telepulesekReteg_kapcsolo=L.layerGroup();
+			fetch('geojson/telepulesek.geojson').then(r=>r.json()).then(function(telepulesek) {
+				telepulesekReteg = L.geoJson(telepulesek, {
+					color: '#A0A0A0',
+					fillColor: 'white',
+					weight: Number(1),
+					fillOpacity: 0.5,
+					opacity: 0.8,
+					className: 'telepules'
+				}).on('click', function (e) {
+					if (selected) {
+						e.target.resetStyle(selected);
+						e.target.bringToBack(selected);
+					};
+					selected = e.layer;
+					selected.bringToFront();
+					turistautakReteg.bringToFront();
+					selected.setStyle({
+						'fillOpacity': '0',
+						'opacity': '1',
+						'weight': Number('3'),
+						'color': '#008080',
+					});
+				}).bindTooltip(
+					l=>'<b>'+l.feature.properties.nev+'</b> <i>(járás: '+l.feature.properties.jaras+')</i>', {className: 'tooltip'}
+				).bindPopup(popup_telepulesek);
+				telepulesekReteg.on('mousemove',e=>telepulesekReteg.getTooltip().setLatLng(e.latlng));
+				telepulesekReteg_kapcsolo.addLayer(telepulesekReteg);
+				telepulesekReteg_kapcsolo.addTo(map);
+				
+				//MINDEN JÁRÁSHATÁR
+				fetch('geojson/mindenjaras.geojson').then(r=>r.json()).then(function(mindenjaras) {
+					mindenjarasReteg = L.geoJson(mindenjaras, {
+						color: '#454545',
+						weight: Number(1.3),
+						opacity: 0.4
+					}).addTo(map);
+				});
+
+				//ORSZÁGHATÁR
+				fetch('geojson/orszaghatar.geojson').then(r=>r.json()).then(function(orszaghatar) {
+					orszaghatarReteg = L.geoJson(orszaghatar, {
+						color: 'red',
+						weight: Number(3),
+						opacity: 0.8,
+						dashArray: 8
+					}).addTo(map);
+				});
+
+				//PT,LC,RS JÁRÁSHATÁROK
+				fetch('geojson/vizsgaltjarasok.geojson').then(r=>r.json()).then(function(jarasok) {
+					jarasokReteg = L.geoJson(jarasok, {
+						color: '#424242',
+						weight: Number(2)
+					}).addTo(map);
+					map.fitBounds(telepulesekReteg.getBounds());
+				});
+			});
+
+			//TURISTAUTAK
+			var turistautakReteg_rk=L.layerGroup();
+			fetch('geojson/turistautak.geojson').then(r=>r.json()).then(function(turistautak) {
+				turistautakReteg = L.geoJson(turistautak, {style:turistautak_szinezes}).bindPopup(popup_turistautak);
+				turistautakReteg_rk.addLayer(turistautakReteg);
+			});
+				//FÜGGVÉNY A TURISTAUTAK ATTRIBÚTUMFÜGGŐ SZÍNEZÉSÉHEZ
+				function turistautak_szinezes(feature) {
+					var szin;
+					var jelzes = feature.properties.jelzes;
+					if (jelzes === 'k') szin = '#3578DF';
+					else if (jelzes === 'p') szin = '#D85151';
+					else if (jelzes === 's') szin = '#D6D635';
+					else if (jelzes === 'z') szin = '#0D8C18';
+					else szin = '#D000DC';
+					return {
+						'color': szin,
+						'weight': Number(4),
+						'dashArray': 4,
+						'className': 'turistautak'
+					};
+				};
+
+			//HATÁRÁTKELŐK
+			var hataratkelokReteg_rk=L.layerGroup();
+			fetch('geojson/hataratkelok.geojson').then(r=>r.json()).then(function(hataratkelok) {
+				hataratkelokReteg = L.geoJson(hataratkelok, {pointToLayer: function(hataratkelokReteg,latlng) {
+					var hataratkelok_ikon = L.icon({iconSize: [30], iconUrl: 'media/hataratkelok.png'});
+					return L.marker(latlng, {icon: hataratkelok_ikon});
+				}}).bindPopup(popup_hataratkelok);
+				hataratkelokReteg_rk.addLayer(hataratkelokReteg);
+				myLayerGroup.addLayer(hataratkelokReteg);
+			});
+
+			//ROMOK
+			var romokReteg_rk=L.layerGroup();
+			fetch('geojson/romok.geojson').then(r=>r.json()).then(function(romok) {
+				romokReteg = L.geoJson(romok, {pointToLayer: function(romokReteg,latlng) {
+					var romok_ikon = L.icon({iconSize: [30], iconUrl: 'media/romok.png'});
+					return L.marker(latlng, {icon: romok_ikon});
+				}}).bindPopup(popup_romok);
+				romokReteg_rk.addLayer(romokReteg);
+				myLayerGroup.addLayer(romokReteg);
+			});
+
+			//VÁRAK ÉS KASTÉLYOK
+			var varakReteg_rk=L.layerGroup();
+			fetch('geojson/varak.geojson').then(r=>r.json()).then(function(varak) {
+				varakReteg = L.geoJson(varak, {pointToLayer: function(varakReteg,latlng) {
+					var varak_ikon = L.icon({iconSize: [30], iconUrl: 'media/varak.png'});
+					return L.marker(latlng, {icon: varak_ikon});
+				}}).bindPopup(popup_varak);
+				varakReteg_rk.addLayer(varakReteg);
+				myLayerGroup.addLayer(varakReteg);
+			});
+
+			//MÚZEUMOK
+			var muzeumokReteg_rk=L.layerGroup();
+			fetch('geojson/muzeumok.geojson').then(r=>r.json()).then(function(muzeumok) {
+				muzeumokReteg = L.geoJson(muzeumok, {pointToLayer: function(muzeumokReteg,latlng) {
+					var muzeumok_ikon = L.icon({iconSize: [30], iconUrl: 'media/muzeumok.png'});
+					return L.marker(latlng, {icon: muzeumok_ikon});
+				}}).bindPopup(popup_muzeumok);
+				muzeumokReteg_rk.addLayer(muzeumokReteg);
+				myLayerGroup.addLayer(muzeumokReteg);
+			});
+
+			//HEGYCSÚCSOK
+			var hegycsucsokReteg_rk=L.layerGroup();
+			fetch('geojson/hegycsucsok.geojson').then(r=>r.json()).then(function(hegycsucsok) {
+				hegycsucsokReteg = L.geoJson(hegycsucsok, {pointToLayer: function(hegycsucsokReteg,latlng) {
+					var hegycsucsok_ikon = L.icon({iconSize: [20], iconUrl: 'media/hegycsucsok.png'});
+					return L.marker(latlng, {icon: hegycsucsok_ikon});
+				}}).bindPopup(popup_hegycsucsok);
+				hegycsucsokReteg_rk.addLayer(hegycsucsokReteg);
+				myLayerGroup.addLayer(hegycsucsokReteg);
+			});
+
+			//TEMPLOMOK
+			var templomokReteg_rk=L.layerGroup();
+			fetch('geojson/templomok.geojson').then(r=>r.json()).then(function(templomok) {
+				templomokReteg = L.geoJson(templomok, {pointToLayer: function(templomokReteg,latlng) {
+					var templomok_ikon = L.icon({iconSize: [30], iconUrl: 'media/' + templomokReteg.properties.kategoria + '.png'});
+					return L.marker(latlng, {icon: templomok_ikon});
+				}}).bindPopup(popup_templomok);
+				templomokReteg_rk.addLayer(templomokReteg);
+				myLayerGroup.addLayer(templomokReteg);
+			});
+
+			//ÚTMENTI KERESZTEK ÉS KEGYHELYEK
+			var utmentiReteg_rk=L.layerGroup();
+			fetch('geojson/utmenti.geojson').then(r=>r.json()).then(function(utmenti) {
+				utmentiReteg = L.geoJson(utmenti, {pointToLayer: function(utmentiReteg,latlng) {
+					var utmenti_ikon = L.icon({iconSize: [30], iconUrl: 'media/' + utmentiReteg.properties.kategoria + '.png'});
+					return L.marker(latlng, {icon: utmenti_ikon});
+				}}).bindPopup(popup_utmenti);
+				utmentiReteg_rk.addLayer(utmentiReteg);
+				myLayerGroup.addLayer(utmentiReteg);
+			});
+
+			//EMLÉKMŰVEK
+			var emlekmuvekReteg_rk=L.layerGroup();
+			fetch('geojson/emlekmuvek_merge.geojson').then(r=>r.json()).then(function(emlekmuvek) {
+				emlekmuvekReteg = L.geoJson(emlekmuvek, {pointToLayer: function(emlekmuvekReteg,latlng) {
+					var emlekmuvek_ikon = L.icon({iconSize: [30], iconUrl: 'media/' + emlekmuvekReteg.properties.kategoria + '.png'});
+					return L.marker(latlng, {icon: emlekmuvek_ikon});
+				}}).bindPopup(popup_emlekmuvek);
+				emlekmuvekReteg_rk.addLayer(emlekmuvekReteg);
+				myLayerGroup.addLayer(emlekmuvekReteg);
+			});
+
+			//TERMÉSZETI LÁTNIVALÓK
+			var termeszetiReteg_rk=L.layerGroup();
+			fetch('geojson/termeszeti_merge.geojson').then(r=>r.json()).then(function(termeszeti) {
+				termeszetiReteg = L.geoJson(termeszeti, {pointToLayer: function(termeszetiReteg,latlng) {
+					var termeszeti_ikon = L.icon({iconSize: [30], iconUrl: 'media/' + termeszetiReteg.properties.kategoria + '.png'});
+					return L.marker(latlng, {icon: termeszeti_ikon});
+				}}).bindPopup(popup_termeszeti);
+				termeszetiReteg_rk.addLayer(termeszetiReteg);
+				myLayerGroup.addLayer(termeszetiReteg);
+			});
+
+			//GEOPARK
+			var geoparkRetegCsoport_rk=L.layerGroup();
+			var geoparkRetegCsoport=L.layerGroup();
+				//GEOPARK HATÁRVONALA
+				fetch('geojson/geopark_hatarvonal.geojson').then(r=>r.json()).then(function(geopark) {
+					geoparkReteg = L.geoJson(geopark, {
+						color: 'black',
+						fillColor: '#008F7A',
+						weight: Number(1),
+						fillOpacity: 0.3,
+						opacity: 0.5
+					}).bindPopup(popup_geopark).addTo(geoparkRetegCsoport);
+
+					//GEOPARK PONTOK
+					fetch('geojson/geopark_pontok.geojson').then(r=>r.json()).then(function(geoparkpontok) {
+						geoparkpontokReteg = L.geoJson(geoparkpontok, {pointToLayer: function(geoparkpontokReteg,latlng) {
+							var geoparkpontok_ikon = L.icon({iconSize: [30], iconUrl: 'media/geoparkpontok.png'});
+							return L.marker(latlng, {icon: geoparkpontok_ikon});
+						}}).bindPopup(popup_geoparkpontok).addTo(geoparkRetegCsoport);
+						geoparkRetegCsoport_rk.addLayer(geoparkRetegCsoport);
+						myLayerGroup.addLayer(geoparkpontokReteg);
+					});
+				});
+
+			//NÉPSZÁMLÁLÁS 1910
+			var telepulesek_1910RetegCsoport_rk=L.featureGroup();
+			var telepulesek_1910RetegCsoport=L.featureGroup();
+				//FELÜLETSZÍNEZÉS 1910
+				fetch('geojson/telepulesek_1910.geojson').then(r=>r.json()).then(function(telepulesek_1910) {
+					telepulesek_1910Reteg = L.geoJson(telepulesek_1910, {style:stilus1910}).bindTooltip(
+						l=>'<b>'+l.feature.properties.nev_hu+'</b> <i>('+l.feature.properties.arany_hu+' %)</i>', {className: 'tooltip'}
+					).bindPopup(popup_telepulesek_1910).addTo(telepulesek_1910RetegCsoport);
+					telepulesek_1910Reteg.on('mousemove',e=>telepulesek_1910Reteg.getTooltip().setLatLng(e.latlng));
+
+					//ADATHIÁNY 1910
+					fetch('geojson/telepulesek_1910_adathiany.geojson').then(r=>r.json()).then(function(telepulesek_1910_adathiany) {
+						telepulesek_1910_adathianyReteg = L.geoJson(telepulesek_1910_adathiany, {
+							color: '#A0A0A0',
+							fillColor: '#A0A0A0',
+							weight: Number (2),
+							fillOpacity: 0.6,
+							opacity: 0.7,
+							className: 'pop'
+						}).bindTooltip(
+							l=>'<b>'+l.feature.properties.nev_hu+'</b> <i>(adathiány)</i>', {className: 'tooltip'}
+						).bindPopup(popup_telepulesek_1910_adathiany).addTo(telepulesek_1910RetegCsoport);
+						telepulesek_1910_adathianyReteg.on('mousemove',e=>telepulesek_1910_adathianyReteg.getTooltip().setLatLng(e.latlng));
+					});
+					telepulesek_1910RetegCsoport_rk.addLayer(telepulesek_1910RetegCsoport);
+					
+					//FÜGGVÉNYEK A NÉPSZÁMLÁLÁSOK RÉTEGEINEK ÁTKAPCSOLÁSÁHOZ - 1910
+					telepulesek_1910RetegCsoport_rk.on('add', function() {
+						telepulesekReteg_kapcsolo.remove();
+						telepulesek_2011Reteg_rk.removeLayer(telepulesek_2011Reteg);
+						telepulesek_1910RetegCsoport_rk.addLayer(telepulesek_1910RetegCsoport);
+						telepulesek_1910RetegCsoport.bringToBack();
+						legend2011.remove();
+						legend1910.addTo(map);
+					});
+					telepulesek_1910RetegCsoport_rk.on('remove', function() {
+						telepulesekReteg_kapcsolo.addTo(map)
+						telepulesekReteg_kapcsolo.addLayer(telepulesekReteg);
+						telepulesekReteg.bringToBack();
+						telepulesek_1910RetegCsoport_rk.remove();
+						telepulesek_2011Reteg_rk.remove();
+						legend1910.remove();
+					});
+				});
+					//FÜGGVÉNY A NÉPSZÁMLÁLÁS 1910 ATTRIBÚTUMFÜGGŐ SZÍNEZÉSÉHEZ
+					function szin1910(arany) {
+						let szin;
+						if (arany < '5.00') szin = '#FFFFFF'; //<5
+						else if (arany > '5.01' && arany < '24.00') szin = '#FFCDCD'; //5 - 25
+						else if (arany > '25.00' && arany < '49.00') szin = '#FFA3A3'; //25 - 50
+						else if (arany > '50.00' && arany < '74.00') szin = '#FF4747'; //50 - 75
+						else if (arany > '75.00') szin = '#D60000'; //>75
+						return szin;
+					};
+					function stilus1910(feature) {
+						var szin;
+						var arany = feature.properties.arany_hu;
+						szin=szin1910(arany);
+						return {
+							'color': '#A0A0A0',
+							'fillColor': szin,
+							'weight': Number('1'),
+							'fillOpacity': '0.6',
+							'opacity': '0.8',
+							'className': 'pop'
+						};
+					};
+					//JELMAGYARÁZAT - 1910
+					var legend1910 = L.control({position: 'topleft'});
+					legend1910.onAdd = function (map) {
+						var div = L.DomUtil.create('div', 'info legend'),
+							grades = [0, 5, 25, 50, 75],
+							labels = [];
+						div.innerHTML='<p style="font-style: italic">Magyar nemzetiségűek</br>aránya 1910-ben (%):</p>';
+						for (var i = 0; i < grades.length; i++) {div.innerHTML += '<i style="background:' + szin1910(grades[i] + 1) + '"></i> ' +	grades[i] + (grades[i + 1] ? ' &ndash; ' + grades[i + 1] + '</br>' : ' <')};
+						return div;
+					};
+
+			//NÉPSZÁMLÁLÁS 2011
+			var telepulesek_2011Reteg_rk=L.featureGroup();
+			fetch('geojson/telepulesek_2011.geojson').then(r=>r.json()).then(function(telepulesek_2011) {
+				telepulesek_2011Reteg = L.geoJson(telepulesek_2011, {style:stilus2011}).bindTooltip(
+					l=>'<b>'+l.feature.properties.nev_hu+'</b> <i>('+l.feature.properties.arany_hu+' %)</i>', {className: 'tooltip'}
+				).bindPopup(popup_telepulesek_2011);
+				telepulesek_2011Reteg_rk.addLayer(telepulesek_2011Reteg);
+				telepulesek_2011Reteg.on('mousemove',e=>telepulesek_2011Reteg.getTooltip().setLatLng(e.latlng));
+
+				//FÜGGVÉNYEK A NÉPSZÁMLÁLÁSOK RÉTEGEINEK ÁTKAPCSOLÁSÁHOZ - 2011
+				telepulesek_2011Reteg_rk.on('add', function() {
+					telepulesekReteg_kapcsolo.remove();
+					telepulesek_1910RetegCsoport_rk.removeLayer(telepulesek_1910RetegCsoport);
+					telepulesek_2011Reteg_rk.addLayer(telepulesek_2011Reteg);
+					telepulesek_2011Reteg.bringToBack();
+					legend1910.remove();
+					legend2011.addTo(map);			
+				});
+				telepulesek_2011Reteg_rk.on('remove', function() {
+					telepulesekReteg_kapcsolo.addTo(map)
+					telepulesekReteg_kapcsolo.addLayer(telepulesekReteg);
+					telepulesekReteg.bringToBack();
+					telepulesek_2011Reteg_rk.remove();
+					telepulesek_1910RetegCsoport_rk.remove();
+					legend2011.remove();
+				});		
+			});
+				//FÜGGVÉNY A NÉPSZÁMLÁLÁS 2011 ATTRIBÚTUMFÜGGŐ SZÍNEZÉSÉHEZ
+				function szin2011(arany) {
+						let szin;
+						if (arany < '5.00') szin = '#FFFFFF'; //<5
+						else if (arany > '5.01' && arany < '25.00') szin = '#FFCDCD'; //5 - 25
+						else if (arany > '26.00' && arany < '49.00') szin = '#FFA3A3'; //25 - 50
+						else if (arany > '50.00' && arany < '76.00') szin = '#FF4747'; //50 - 75
+						else if (arany > '76.5') szin = '#D60000'; //>75
+						return szin;
+				}
+				function stilus2011(feature) {
+					var szin;
+					var arany = feature.properties.arany_hu;
+					szin=szin2011(arany);
+					return {
+						'color': '#A0A0A0',
+						'fillColor': szin,
+						'weight': Number('1'),
+						'fillOpacity': '0.6',
+						'opacity': '0.8',
+						'className': 'pop'
+					};
+				};
+				//JELMAGYARÁZAT - 2011
+				var legend2011 = L.control({position: 'topleft'});
+				legend2011.onAdd = function (map) {
+					var div = L.DomUtil.create('div', 'info legend'),
+						grades = [0, 5, 25, 50, 75],
+						labels = [];
+					div.innerHTML='<p style="font-style: italic">Magyar nemzetiségűek</br>aránya 2011-ben (%):</p>';
+					for (var i = 0; i < grades.length; i++) {div.innerHTML += '<i style="background:' + szin1910(grades[i] + 1) + '"></i> ' +	grades[i] + (grades[i + 1] ? ' &ndash; ' + grades[i + 1] + '</br>' : ' <')};
+					return div;
+				};
+
+			//POPUP FÜGGVÉNYEK
+			function popup_telepulesek(layer) {
+                var p=layer.feature.properties;
+                telepulesekReteg.getTooltip().remove();
+                return "<div style='width: 209px; text-align: center; margin-bottom: 5px'><b><big>"+p.nev+"</big></b><i></br>("+p.Name+")</i></div>"+
+					"<div style='text-align: center'><img src='media/cimer/Screenshot_"+p.id+".png' width='55' height='70' /></div>"+
+					"<hr>Jogállás: <b><i>"+p.jogallas+"</i></b></br>Településre eső pontok száma: <b><i>"+p.pontok_db+" db</i></b></br></br>"+
+					"<details><summary style='cursor: pointer'><b><u>Statisztikai adatok (2011):</u></b></summary><table><tr><td>Teljes népesség:</td><td><i><b>"+p.pop_2011+" fő</b></i></td></tr><tr><td>Terület:</td><td><i><b>"+p.terulet+" km<sup>2</sup></b></i></td></tr><tr><td>Népsűrűség:</td><td><i><b>"+p.nepsuruseg+" fő/km<sup>2</sup></b></i></td></tr></table></details>";
+            };
+			function popup_hataratkelok(layer) {
+                var p=layer.feature.properties;
+                return "<div style='text-align: center'><b>KÖZÚTI HATÁRÁTKELŐ [SK/HU]</b></br><div style='text-align: center; margin-top: 5px'><img src='media/hataratkelok.png' width='30' height='35' /></div>"+
+					"<hr><big><i><b>"+p.Name+"</b></i></big></br>Nyitvatartás: <i>0-24</i></div>";
+            };
+			function popup_varak(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>VÁRAK ÉS KASTÉLYOK</b></br><div style='text-align: center; margin-top: 5px'><img src='media/varak.png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.name_hu+"</i></big></div><div style='text-align: center; margin-top: 15px'><img src='media/kep/varak/"+p.id+".jpg' width='300' height='250' title='Forrás: "+p.forras+"' /></div>";
+            };
+			function popup_turistautak(layer) {
+                var p=layer.feature.properties;
+                return "<div style='text-align: center'><b>TURISTAÚT</b></div>"+
+					"<hr><big><i><b>"+p.leiras+"</b></i></br></br><i>Hossz: <b>"+p.hossz_km+" km</b></br>Jelzés(ek): <b>"+p.jelzes+"</b></i></big>";
+            };
+			function popup_muzeumok(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>MÚZEUM</b></br><div style='text-align: center; margin-top: 5px'><img src='media/muzeumok.png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.nev+"</i></big></div><div style='text-align: center; margin-top: 15px'><img src='media/kep/muzeumok/"+p.id+".jpg' width='300' height='250' title='Forrás: "+p.forras+"' /></div>";
+            };
+			function popup_hegycsucsok(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>HEGYCSÚCS</b></br><div style='text-align: center; margin-top: 5px'><img src='media/hegycsucsok.png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.Name+"</br>("+p.magassag+" m)</i></big></div>";
+            };
+			function popup_templomok(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>"+p.popup+"</b></br><div style='text-align: center; margin-top: 5px'><img src='media/"+p.kategoria+".png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.nev+"</i></big></div>";
+			};
+			function popup_utmenti(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>"+p.popup+"</b></br><div style='text-align: center; margin-top: 5px'><img src='media/"+p.kategoria+".png' width='30' height='30' /></div></div>";
+            };
+			function popup_emlekmuvek(layer) {
+                var p=layer.feature.properties;
+                return "<div style='text-align: center'><b>"+p.popup+"</b></br><div style='text-align: center; margin-top: 5px'><img src='media/"+p.kategoria+".png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.nev+"</i></big></div>";
+            };
+			function popup_termeszeti(layer) {
+                var p=layer.feature.properties;
+                return "<div style='text-align: center'><b>"+p.popup+"</b></br><div style='text-align: center; margin-top: 5px'><img src='media/"+p.kategoria+".png' width='30' height='30' /></div>"+
+					"<hr><big><i>"+p.nev+"</i></big></div>";
+            };
+			function popup_romok(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b>ROM</b></br><div style='text-align: center; margin-top: 5px;'><img src='media/romok.png' width='30' height='30' /></div></div>";
+            };
+			function popup_geopark(layer) {
+                var p=layer.feature.properties;
+                return "<div style='text-align: center'><big><b>Novohrad-Nógrád Geopark</b></big></div>"+
+					"<div style='text-align: center; margin-top: 5px'><img src='media/geoparkpontok.png' width='100' height='100' /></br>"+
+					"<i><a class='popup_link' href='https://www.nogradgeopark.eu/hu/novohrad-nograd-geopark' title='Link a Geopark hivatalos honlapjához'>Hivatalos honlap</a></i></div>";
+			}
+			function popup_geoparkpontok(layer) {
+                var p=layer.feature.properties;
+				return "<div style='text-align: center'><b><i>Novohrad-Nógrád Geopark</i></br>TERMÉSZETI LÁTNIVALÓ</b></br><div style='text-align: center; margin-top: 5px'><img src='media/geoparkpontok.png' width='50' height='50' /></div>"+
+					"<hr><big>"+p.nev+"</big></div><div style='text-align: center; margin-top: 15px'><img src='media/kep/geopark_pontok/"+p.id+".jpg' style='width:300px;height:250px;' title='Forrás: "+p.forras+"' /></div>";
+            };
+			function popup_telepulesek_1910(layer) {
+                var p=layer.feature.properties;
+				telepulesek_1910Reteg.getTooltip().remove();
+                return "<div style='width: 241px; text-align: center'><b><big>"+p.nev_hu+"</big></b><i></br> ("+p.nev_sk+")</i></div>"+
+					"<hr><div style='text-align: center'><img src='media/diagram/Screenshot_"+p.id+".png' width='240' height='420' /></div>";										
+			};
+			function popup_telepulesek_1910_adathiany(layer) {
+				telepulesek_1910_adathianyReteg.getTooltip().remove();
+                var p=layer.feature.properties;
+                return "<div style='width: 209px; text-align: center'><b><big>"+p.nev_hu+"</big></b><i></br> ("+p.nev_sk+")</i></div>"+
+					"<hr><div style='width: 208px; text-align: center'><i><a href='https://jakubtamas.web.elte.hu/joomla/index.php/hu/nepszamlalas' id='adathiany_popup'>Adathiány</a></i></div>";
+            };
+			function popup_telepulesek_2011(layer) {
+				telepulesek_2011Reteg.getTooltip().remove();
+                var p=layer.feature.properties;
+                return "<div style='width: 241px; text-align: center'><b><big>"+p.nev_hu+"</big></b><i></br> ("+p.nev_sk+")</i></div>"+
+					"<hr><div style='text-align: center'><img src='media/diagram/Screenshot_"+p.id+".png' width='240' height='420' /></div>";
+            };
+			function popup_zoomjaras(layer) {
+                var p=layer.feature.properties;
+				return "<div style='width: 261px; text-align: center; margin-bottom: 5px'><b><big>"+p.name_hu+"</big></b><i></br>("+p.Name+")</i></div>"+
+					"<hr>Kerület: <b><i>Besztercebánya</i></b></br>Települések száma: <b><i>"+p.telep_db+" db</i></b></br>Járásra eső pontok száma: <b><i>"+p.pontok_db+" db</i></b></br></br><b><u>Statisztikai adatok (2011):</u></b><table><tr><td><i>Teljes népesség:</i></td><td><b><i>"+p.pop+" fő</i></b></td></tr><tr><td><i>Magyar nemzetiségűek aránya:</i></td><td><b><i>"+p.arany+" %</i></b></td></tr><tr><td><i>Terület:</i></td><td><b><i>"+p.terulet+" km<sup>2</sup></i></b></td></tr><tr><td><i>Népsűrűség:</i></td><td><b><i>"+p.nepsuruseg+" fő/km<sup>2</sup></i></b></td></tr></table>";
+            };
+
+			//RÉTEGKEZELŐ
+			var alapterkepek={
+				'OpenStreetMap':osm,
+				'OpenTopoMap':otm, 
+				'ESRI Imagery': satellite
+			};
+			var fedvenyek={
+				'<i>Népszámlálás 1910</i>':telepulesek_1910RetegCsoport_rk,
+				'<i>Népszámlálás 2011</i>':telepulesek_2011Reteg_rk,
+				'Emlékművek és műalkotások':emlekmuvekReteg_rk,
+				'Határátkelők':hataratkelokReteg_rk,
+				'Hegycsúcsok':hegycsucsokReteg_rk,
+				'Múzeumok':muzeumokReteg_rk,
+				'Novohrad-Nógrád Geopark':geoparkRetegCsoport_rk,
+				'Romok':romokReteg_rk,
+				'Templomok és kápolnák':templomokReteg_rk,
+				'Természeti látnivalók':termeszetiReteg_rk, 
+				'Turistautak':turistautakReteg_rk, 
+				'Út menti keresztek és kegyhelyek':utmentiReteg_rk, 
+				'Várak és kastélyok':varakReteg_rk
+			};
+			var retegkezelo=L.control.layers(alapterkepek, fedvenyek).addTo(map);
+
+			//FÜGGVÉNY A TELEPÜLÉS KIJELÖLÉSÉNEK VISSZAÁLLÍTÁSÁHOZ
+			map.on('click', function() {telepulesekReteg.resetStyle()});
+
+			//FÜGGVÉNY AZ ALAPÉRTELMEZETT NAGYÍTÁSHOZ
+			function zoomrefresh() {map.flyToBounds(telepulesekReteg.getBounds())};
+
+			//FÜGGVÉNY A TELEPÜLÉSRÉTEG ALULTARTÁSÁHOZ
+			map.on('overlayadd', function (event) {telepulesekReteg.bringToBack()});
+
+			//FÜGGVÉNY A SÖTÉTÍTŐ ÉS AZ ÖSSZEVONT JÁRÁSOK MEGJELENÍTÉSÉHEZ
+			map.on('zoom', function() {
+				if (map.getZoom() == 8)
+					sotetitoReteg.addTo(map).bringToBack(),
+					zoomjarasReteg.addTo(map).bringToBack(),
+					telepulesekReteg_kapcsolo.removeLayer(telepulesekReteg),
+					jarasokReteg.remove();
+				else
+					sotetitoReteg.remove(),
+					zoomjarasReteg.remove(),
+					jarasokReteg.addTo(map),
+					telepulesekReteg_kapcsolo.addLayer(telepulesekReteg),
+					telepulesekReteg.bringToBack();
+			});
+		</script>
+	</body>
+</html>

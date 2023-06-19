@@ -1,0 +1,20 @@
+{
+"type": "FeatureCollection",
+"name": "varak",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Name": "Kaštieľ v Ožďanoch", "kategoria": "manor", "name_hu": "Osgyáni kastély", "id": 1, "forras": "https://slovenskycestovatel.sk/item/ozdiansky-kastiel" }, "geometry": { "type": "Point", "coordinates": [ 19.89612, 48.37932 ] } },
+{ "type": "Feature", "properties": { "Name": "Podrečanský Kaštieľ", "kategoria": "manor", "name_hu": "Patakaljai kastély", "id": 2, "forras": "https://www.wikiwand.com/hu/Patakalja" }, "geometry": { "type": "Point", "coordinates": [ 19.59788, 48.40231 ] } },
+{ "type": "Feature", "properties": { "Name": "Haličský zámok", "kategoria": "castle", "name_hu": "Gácsi várkastély", "id": 3, "forras": "https://www.wikiwand.com/sk/Hali%C4%8Dsk%C3%BD_z%C3%A1mok" }, "geometry": { "type": "Point", "coordinates": [ 19.57532, 48.3568 ] } },
+{ "type": "Feature", "properties": { "Name": "Hrad Šomoška", "kategoria": "castle", "name_hu": "Somoskői vár", "id": 4, "forras": "https://csodalatosmagyarorszag.hu/hirek/itthon/somosko-vara-egy-magyar-falu-amelynek-eroditmenye-szlovakiaban-van/" }, "geometry": { "type": "Point", "coordinates": [ 19.85703, 48.17142 ] } },
+{ "type": "Feature", "properties": { "Name": "Hrad Divín", "kategoria": "castle", "name_hu": "Divény vára", "id": 5, "forras": "https://varak.hu/latnivalo/index/2335-Diveny-Var/" }, "geometry": { "type": "Point", "coordinates": [ 19.53303, 48.44828 ] } },
+{ "type": "Feature", "properties": { "Name": "Fiľakovský hrad", "kategoria": "castle", "name_hu": "Fülek vára", "id": 6, "forras": "https://www.bnpi.hu/hu/tura/tanosveny-a-fuleki-varban" }, "geometry": { "type": "Point", "coordinates": [ 19.82534, 48.27159 ] } },
+{ "type": "Feature", "properties": { "Name": "Kaštieľ Veľký Blh", "kategoria": "castle", "name_hu": "Koháry-kastély", "id": 7, "forras": "https://commons.wikimedia.org/wiki/File:Ve%C4%BEk%C3%BD_Blh_-_Ka%C5%A1tie%C4%BE_(2).jpg" }, "geometry": { "type": "Point", "coordinates": [ 20.1139, 48.45062 ] } },
+{ "type": "Feature", "properties": { "Name": "Kaštieľ Rimavská Sobota", "kategoria": "castle", "name_hu": "Rimaszombati kastély", "id": 8, "forras": "Saját fénykép" }, "geometry": { "type": "Point", "coordinates": [ 20.00544, 48.37536 ] } },
+{ "type": "Feature", "properties": { "Name": "Hrad Hajnáčka", "kategoria": "castle", "name_hu": "Ajnácskő vára", "id": 9, "forras": "https://varak.hu/latnivalo/index/2104-Ajnacsko-Var/" }, "geometry": { "type": "Point", "coordinates": [ 19.95536, 48.21824 ] } },
+{ "type": "Feature", "properties": { "Name": "Kaštieľ Kráľ", "kategoria": "castle", "name_hu": "Sajószentkirály kastély", "id": 10, "forras": "https://www.slovago.sk/kastiel-kral" }, "geometry": { "type": "Point", "coordinates": [ 20.34331, 48.3281 ] } },
+{ "type": "Feature", "properties": { "Name": "Tisovský hrad", "kategoria": "castle", "name_hu": "Tiszolci vár", "id": 11, "forras": "https://turaddikt.blog.hu/tags/Tiszolc" }, "geometry": { "type": "Point", "coordinates": [ 19.92457, 48.68181 ] } },
+{ "type": "Feature", "properties": { "Name": "Kaštieľ Forgách", "kategoria": "castle", "name_hu": "Forgách-kastély", "id": 12, "forras": "https://felvidek.ma/2014/06/videfalva-vidina-magyar-emlekei/" }, "geometry": { "type": "Point", "coordinates": [ 19.6521, 48.35879 ] } },
+{ "type": "Feature", "properties": { "Name": "Kaštiel Divín", "kategoria": "manor", "name_hu": "Divény kastélya", "id": 13, "forras": "https://hu.m.wikipedia.org/wiki/F%C3%A1jl:Div%C3%ADn_-_Ka%C5%A1tie%C4%BE_s_opevnen%C3%ADm_(2).jpg" }, "geometry": { "type": "Point", "coordinates": [ 19.53448, 48.44897 ] } }
+]
+}
